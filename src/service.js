@@ -4,9 +4,10 @@ const vscode = require("vscode");
 const express = require("express")
 const bodyParser = require("body-parser");
 const multer  = require('multer')
-const getPort = require("get-port");
+const findAvailablePort = require("./findAvailablePort.js");
 const open = require("open");
 const _ = require("lodash");
+const message = require("./message");
 
 const assets = require("./assets.js");
 const share = require("./share.js");
@@ -24,9 +25,52 @@ const settings = require("./settings.js");
 // 	}
 // };
 
+function requireCustomPort() {
+    let checkTimeoutID, currentInput;
+
+    let inputbox = vscode.window.createInputBox();
+    inputbox.ignoreFocusOut = true;
+    inputbox.title = message("service.require-port.title");
+    inputbox.placeholder = message("service.require-port.placeholder");
+    inputbox.show()
+
+    inputbox.onDidChangeValue((value) => {
+        currentInput = value;
+        if (checkTimeoutID) {
+            clearTimeout(checkTimeoutID);
+        }
+        checkTimeoutID = setTimeout(async () => {
+            let isAvailable = await findAvailablePort(value, 1);
+            if (isAvailable !== undefined) {
+                inputbox.validationMessage = message("service.require-port.available");
+            } else {
+                inputbox.validationMessage = message("service.require-port.unavailable");
+            }
+        }, 500);
+    })
+
+    return new Promise((resolve, reject) => {
+        inputbox.onDidAccept(async (value) => {
+            resolve(currentInput);
+            inputbox.hide();
+            inputbox.dispose();
+        });
+    })
+
+}
+
 module.exports = async function () {
 
-    let port = await getPort({ port: 7777 });
+    var port = await findAvailablePort(7777, 3)
+        
+    if (!port) {
+        port = await requireCustomPort();
+        let isAvailable = await findAvailablePort(port, 1);
+        if (!isAvailable) {
+            vscode.window.showInformationMessage(message("service.failed"));
+            return;
+        }
+    }
 
     const app = express();
 
@@ -59,6 +103,7 @@ module.exports = async function () {
         try {
             await assets.add(req.file.path)
         } catch (e) {
+            console.error(e);
             res.json({
                 err: true,
                 errmsg: e.toString()
@@ -89,16 +134,16 @@ module.exports = async function () {
     });
 
     // TODO: All router above that related to voice-package should change to `/voice-packages/...`
-    app.post("/voice-packages/disable", (req, res) => {
+    app.post("/voice-packages/change-enabled-state", (req, res) => {
         const {
             name,
-            disable
+            enable
         } = req.body
 
-        if (disable) {
-            settings.voices.addDisable(name);
+        if (enable) {
+            settings.voices.enable(name);
         } else {
-            settings.voices.removeDisable(name);
+            settings.voices.disable(name);
         }
 
         assets.applySettings();

@@ -6,6 +6,7 @@ const jszip = require("jszip")
 
 const share = require("./share.js");
 const settings = require("./settings.js");
+const { file } = require("jszip");
 
 var builtInVoicePackages = [];
 const requiredProperties = ["name", "version", "contributes"];
@@ -70,9 +71,10 @@ async function load() {
                 console.error(e);
             }
         }
-        config.disable = settings.voices.isDisable(config.name);
+        config.enabled = settings.voices.isEnabled(config.name);
         maindata.push(config);
     }
+
     share.maindata = maindata;
 }
 
@@ -95,11 +97,14 @@ async function add(filepath) {
 
     let basepath = path.resolve(share.PATH_VOICE_PACKAGES, manifest.name);
     try {
-        fs.delete(share.uri(basepath), { recursive: true })
+        await fs.delete(share.uri(basepath), { recursive: true })
     } catch (e) {}
 
     fs.createDirectory(share.uri(basepath));
     for (let filename in zip.files) {
+        if (zip.files[filename].dir) {
+            continue;
+        }
         await fs.writeFile(share.uri(path.resolve(basepath, filename)), await zip.file(filename).async("nodebuffer"));
     }
 }
@@ -113,7 +118,7 @@ async function remove(name) {
 
 function applySettings() {
     share.maindata = share.maindata.map((item) => {
-        item.disable = settings.voices.isDisable(item.name);
+        item.enabled = settings.voices.isEnabled(item.name);
         return item;
     })
 }

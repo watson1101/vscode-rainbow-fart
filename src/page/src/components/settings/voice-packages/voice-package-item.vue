@@ -1,6 +1,6 @@
 <template>
     <q-panel class="container" secondary @click="doShowDetails">
-        <q-switch class="enable-switch" :value="isEnabled" @click.native.stop="doChangeDisable()"></q-switch>
+        <q-switch class="enable-switch" :value="data.enabled" @click.native.stop="changeEnableState()"></q-switch>
 
         <q-avatar :src="avatarLight" :src-dark="avatarDark" shape="rounded-square" size="large"></q-avatar>
 
@@ -18,7 +18,7 @@
             </div>
             <q-divider type="vertical"></q-divider>
             <div class="panel-item">
-                <q-icon name="user"></q-icon>
+                <q-icon :name="data.gender=='male'?'male':data.gender=='female'?'female':'gender'"></q-icon>
                 <q-text>{{ $t(data["gender"]) }}</q-text>
             </div>
 
@@ -57,7 +57,8 @@
     }
 
     .info {
-        width: calc(~"100% - 104px");
+        width: calc(~"100% - 180px");
+        text-align: justify;
         display: inline-block;
         vertical-align: top;
 
@@ -128,9 +129,6 @@ export default {
                 return avatar;
             }
             return defaultAvatarDark;
-        },
-        isEnabled(){
-            return !this.data.disable;
         }
     },
     methods: {
@@ -140,8 +138,8 @@ export default {
         doRemove(){
             this.$emit("remove", {name:this.data.name});
         },
-        doChangeDisable(){
-            this.$emit("changeDisable");
+        changeEnableState(){
+            this.$emit("changeEnableState");
         }
     }
 }

@@ -55,11 +55,31 @@
 }
 ```
 
+你还可以使用正则表达式来作为关键字。如下：
+
+```json
+// manifest.json
+{
+    "contributes": [
+        {
+            "keywords": "function",
+            "regexps": "=>\\s*{",
+            "voices": [
+                "function_01.mp3",
+                "function_02.mp3",
+                "function_03.mp3",
+                // ...
+            ]
+        }
+    ]
+}
+```
+
 ## Step 3: 丰富语音包元信息
 
 语音包元信息文件还有很多其他字段，可以展示很多额外的信息（如下）。
 
-<ImageZoom :src="URL_PREFIX + '/assets/ui-settings.png'" :border="true" width="300"/>
+<ImageZoom :src="URL_PREFIX+'/zh/assets/ui-settings.png'" :border="true" width="300"/>
 
 <Note>以下字段均为可选字段</Note>
 
